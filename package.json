@@ -1,0 +1,11 @@
+{
+  "name": "biome-untitled-vcs-panic-repro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "repro": "node repro.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8"
+  }
+}

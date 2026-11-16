@@ -1,0 +1,32 @@
+# A green job means the panic REPRODUCED on that OS with the Biome version
+# pinned in package.json on this branch.
+name: Reproduce panic
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repro:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Biome version
+        run: npx biome --version
+      - name: Run reproduction (passes when the panic reproduces)
+        shell: bash
+        run: |
+          set +e
+          node repro.mjs | tee repro-output.txt
+          grep -q "^REPRODUCED" repro-output.txt
