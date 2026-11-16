@@ -67,13 +67,26 @@ Close the untitled tab and run "Biome: Restart" to recover.
 
 Each branch pins a single `@biomejs/biome` version. The "Reproduce panic" GitHub Actions
 workflow runs `repro.mjs` on Windows, Ubuntu and macOS for every branch. A **green** job
-means the panic **reproduced**.
+means the panic **reproduced**, and a red job means the server stayed up.
 
-| Branch        | Biome                                  |
-| ------------- | -------------------------------------- |
-| `biome-2.6.6` | 2.6.6 (version in the original report) |
-| `biome-2.6.7` | 2.6.7                                  |
-| `biome-2.6.8` | 2.6.8                                  |
-| `main`        | 2.6.8 (latest)                         |
+| Branch        | Biome                                  | Windows    | Ubuntu         | macOS          |
+| ------------- | -------------------------------------- | ---------- | -------------- | -------------- |
+| `biome-2.6.6` | 2.6.6 (version in the original report) | reproduced | not reproduced | not reproduced |
+| `biome-2.6.7` | 2.6.7                                  | reproduced | not reproduced | not reproduced |
+| `biome-2.6.8` | 2.6.8                                  | reproduced | not reproduced | not reproduced |
+| `main`        | 2.6.8 (latest)                         | reproduced | not reproduced | not reproduced |
 
-Reproduced locally on Windows 11 (x86_64) with VS Code 1.146.0 and Biome extension 3.8.1.
+Also reproduced locally on Windows 11 (x86_64) with VS Code 1.146.0 and Biome extension 3.8.1.
+
+### Why only Windows
+
+On every platform, the untitled document creates a project, and a root `Gitignore`, rooted
+at the empty path `""`, while the scanner produces absolute paths. `ignore`'s
+`Gitignore::strip` then removes the root prefix and a leading `/`:
+
+- Unix (`ignore` 0.4.25 `pathutil.rs`, byte-wise `strip_prefix`): `""` matches, then the
+  leading `/` is stripped, so the path becomes relative and the assert passes. Nothing
+  crashes, although patterns are matched against the wrong path.
+- Windows (`std::path::Path::strip_prefix`): stripping `""` leaves `C:\...` unchanged and
+  there is no leading `/`, so the path still has a root and
+  `assert!(!path.has_root(), "path is expected to be under the root")` panics.
